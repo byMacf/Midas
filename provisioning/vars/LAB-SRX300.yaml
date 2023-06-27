@@ -1,0 +1,3 @@
+hostname: LAB-SRX300
+management_ip: 172.16.0.1
+loopback_ip: 1.1.1.1

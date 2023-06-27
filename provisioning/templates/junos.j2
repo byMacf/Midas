@@ -1,0 +1,280 @@
+system {
+    host-name {{ hostname }};
+    root-authentication {
+	    plain-text-password-value "Juniper1";
+    }
+    login {
+        user datatech {
+            uid 2001;
+            class read-only;
+            authentication {
+                plain-text-password-value "Juniper1";
+            }
+        }
+        user neteng {
+            uid 2000;
+            class super-user;
+            authentication {
+                plain-text-password-value "Juniper1";
+            }
+        }
+    }
+    services {
+        ssh {
+            root-login allow;
+        }
+        netconf {
+            ssh;
+        }
+    }
+    tacplus-server {
+        10.10.10.10 secret "Juniper1"; ## SECRET-DATA
+        11.11.11.11 secret "Juniper1"; ## SECRET-DATA
+    }
+    syslog {
+        archive size 100k files 3;
+        user * {
+            any emergency;
+        }
+        file messages {
+            any notice;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+}
+security {
+    authentication-key-chains {
+        key-chain BGP-KC-LHR14-R101-NCL62-R2 {
+            key 1 {
+                secret "$9$Vyws4JZjq.57-YoZU.m"; ## SECRET-DATA
+                start-time "2022-7-1.00:00:00 +0000";
+            }
+            key 2 {
+                secret "$9$0Yfd1clVbs2oJdV69pOSybs2aUj5TF9AuiHP5FnpuNdVbs24aZ"; ## SECRET-DATA
+                start-time "2023-4-3.15:13:45 +0000";
+            }
+        }
+        key-chain BGP-KC-NCL62-R2-SC-FW2 {
+            key 1 {
+                secret "$9$8x0Xxdws4ZGiKM7Vs2GU"; ## SECRET-DATA
+                start-time "2022-7-1.00:00:00 +0000";
+            }
+            key 2 {
+                secret "$9$B74EeW24JikmlKDH.m3n1RhyvWxNV24JikSreKLX7-VYGjzF6"; ## SECRET-DATA
+                start-time "2023-4-3.15:42:04 +0000";
+            }
+        }
+        key-chain BRMA-KC-LHR30-R101-NCL60-R1 {
+            key 1 {
+                apply-flags omit;
+                secret "$9$1HCREyeK87NbuOhrKMN-"; ## SECRET-DATA
+                key-name 4953bd1120ffcc31e1d044870c52d67b215c04f0c2ba1fccc970fa16d18a6b6f;
+                start-time "2023-3-31.14:22:24 +0000";
+            }
+        }
+    }
+    forwarding-options {
+        family {
+            mpls {
+                mode packet-based;
+            }
+        }
+    }
+    macsec {
+        connectivity-association BRMA-WAN-LHR30-R101-NCL60-R1 {
+            security-mode static-cak;
+            mka {
+                transmit-interval 6000;
+                sak-rekey-interval 60;
+            }
+            pre-shared-key-chain BRMA-KC-LHR30-R101-NCL60-R1;
+        }
+        interfaces {
+            ge-0/0/7 {
+                connectivity-association BRMA-WAN-LHR30-R101-NCL60-R1;
+            }
+        }
+    }
+}
+interfaces {
+    ge-0/0/0 {
+        description "{{ hostname }} ge-0/0/0 <--> gigabitEthernet0 LAB-RELAY";
+        unit 0 {
+            family inet {
+                address 10.0.0.1/31;
+            }
+        }
+    }
+    ge-0/0/1 {
+        description "{{ hostname }} ge-0/0/1 <--> gigabitEthernet1 LAB-897VA";
+        unit 0 {
+            family inet {
+                address 10.0.0.4/31;
+            }
+        }
+    }
+    ge-0/0/2 {
+        description "{{ hostname }} ge-0/0/2 <--> gigabitEthernet2 LAB-897VA";
+        unit 0 {
+            family inet {
+                address 10.0.0.6/31;
+            }
+        }
+    }
+    ge-0/0/5 {
+        description "Management Network";
+        unit 0 {
+            family inet {
+                address {{ management_ip }}/24;
+            }
+        }
+    }
+    lo0 {
+        unit 0 {
+            family inet {
+                address {{ loopback_ip }}/32;
+            }
+        }
+    }
+}
+snmp {
+    v3 {
+        usm {
+            local-engine {
+                user snmp-user {
+                    authentication-sha {
+                        authentication-password "Juniper1"; ## SECRET-DATA
+                    }
+                    privacy-aes128 {
+                        privacy-password "Juniper1"; ## SECRET-DATA
+                    }
+                }
+            }
+        }
+    }
+}
+policy-options {
+    policy-statement BN-10-RMA-EXPORT {
+        term BGP {
+            from protocol bgp;
+            then {
+                community add BN-10-RMA-TARGET;
+                accept;
+            }
+        }
+        term OSPF {
+            from protocol ospf;
+            then {
+                community add BN-10-RMA-TARGET;
+                accept;
+            }
+        }
+        term AGGREGATE {
+            from protocol aggregate;
+            then {
+                community add BN-10-RMA-TARGET;
+                accept;
+            }
+        }
+        term REJECT-ALL {
+            then reject;
+        }
+    }
+    policy-statement BN-10-RMA-IMPORT {
+        term BGP {
+            from {
+                protocol bgp;
+                community BN-10-RMA-TARGET;
+            }
+            then accept;
+        }
+        term REJECT-ALL {
+            then reject;
+        }
+    }
+    community BN-10-RMA-TARGET members target:65100:1000;
+}
+access {
+    radius-server {
+        10.10.10.10 secret "Juniper1"; ## SECRET-DATA
+        11.11.11.11 secret "Juniper1"; ## SECRET-DATA
+    }
+}
+routing-instances {
+    BN-10-RMA {
+        protocols {
+            bgp {
+                group SEC-NET-FW {
+                    type external;
+                    description "eBGP to Security Network Firewall";
+                    local-address 192.168.32.78;
+                    hold-time 30;
+                    peer-as 64900;
+                    neighbor 192.168.32.79 {
+                        description ncl62-sc-fw2;
+                        authentication-key-chain BGP-KC-NCL62-R2-SC-FW2;
+                    }
+                }
+                traceoptions {
+                    file bgp.log;
+                    flag state;
+                }
+                log-updown;
+            }
+        }
+        instance-type vrf;
+        route-distinguisher 65100:1000;
+        vrf-import BN-10-RMA-IMPORT;
+        vrf-export BN-10-RMA-EXPORT;
+        vrf-table-label;
+    }
+}
+protocols {
+    ospf {
+        area 0.0.0.0 {
+            interface ge-0/0/1.0 {
+                interface-type p2p;
+                authentication {
+                    md5 1 key "Juniper1"; ## SECRET-DATA
+                }
+            }
+            interface ge-0/0/2.0 {
+                interface-type p2p;
+                authentication {
+                    md5 1 key "Juniper1"; ## SECRET-DATA
+                }
+            }
+            interface lo0.0 {
+                passive;
+            }
+        }
+    }
+    bgp {
+        group IBGP-FULL-MESH {
+            type internal;
+            description "IBGP Full Mesh";
+            hold-time 30;
+            multipath {
+                multiple-as;
+            }
+            neighbor 172.17.0.0 {
+                description lhr14-bn-com-agg-r101;
+                authentication-key-chain BGP-KC-LHR14-R101-NCL62-R2;
+            }
+        }
+        traceoptions {
+            file bgp.log;
+            flag state;
+        }
+        log-updown;
+    }
+    lldp {
+        interface all;
+    }
+}
+routing-options {
+    autonomous-system 65100;
+}

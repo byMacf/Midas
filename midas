@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+from utils.log import get_loggers
+from topology.midast import Topology
+from provisioning.midasp import Provisioning
+from dhcp.midasd import DHCPServer
+
+if __name__ == '__main__':
+    get_loggers()
+    topology = Topology()
+    topology.build()
+    provisioning = Provisioning()
+    provisioning.render(topology)
+    dhcp_server = DHCPServer()
+    dhcp_server.run(topology)
+
+# Todo
+# 1. Implement giaddr inspection as backup to packet source address, current using socket source IP instead
+    # Not needed? Adds further complexity and lines of code, socket already reports source IP address
+# 2. Add fingerprints / persistent lease storage system (ensure that duplicate packets are only printed once, i.e. Cisco sends multiple release packets)
+# 3. Work out what variables can be made more dynamic, i.e. reply packet options - build from a YAML file?
+# 4. Make IP allocation & config var (YAML) generation automatic
+# 5. Implement socket.inet_aton() function
+# 6. PCAP from PC to capture DHCP option values that are not yet printed in a human readable format
+# 7. Mount lab Pi as NFS share on valykrie Pi to create automatic backups with duplicati

@@ -1,0 +1,54 @@
+Lab:
+  nodes:
+    PI-DHCP:
+      os: ubuntu
+      no_render: True
+    LAB-RELAY:
+      os: cisco_ios
+      no_render: True
+    LAB-897VA:
+      os: cisco_ios
+    LAB-SRX300:
+      os: junos
+  edges:
+    1:
+      a_end: LAB-RELAY
+      b_end: LAB-SRX300
+      a_end_ip: 10.0.0.0
+      b_end_ip: 10.0.0.1
+      a_end_interface: GigabitEthernet0
+      b_end_interface: ge-0/0/0
+      edge_index: 0
+    2:
+      a_end: LAB-RELAY
+      b_end: LAB-897VA
+      a_end_ip: 10.0.0.2
+      b_end_ip: 10.0.0.3
+      a_end_interface: GigabitEthernet1
+      b_end_interface: GigabitEthernet8
+      edge_index: 0
+    3:
+      a_end: PI-DHCP
+      b_end: LAB-RELAY
+      a_end_ip: 172.16.0.200
+      b_end_ip: 172.16.0.2
+      a_end_interface: eth0
+      b_end_interface: GigabitEthernet8
+      edge_index: 0
+    4:
+      a_end: LAB-897VA
+      b_end: LAB-SRX300
+      a_end_ip: 10.0.0.5
+      b_end_ip: 10.0.0.4
+      a_end_interface: GigabitEthernet1
+      b_end_interface: ge-0/0/1
+      edge_index: 0
+    5:
+      a_end: LAB-897VA
+      b_end: LAB-SRX300
+      a_end_ip: 10.0.0.7
+      b_end_ip: 10.0.0.6
+      a_end_interface: GigabitEthernet2
+      b_end_interface: ge-0/0/2
+      edge_index: 1
+

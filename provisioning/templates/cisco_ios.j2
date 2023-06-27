@@ -1,0 +1,199 @@
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+no service password-recovery
+!
+hostname {{ hostname }}
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain lookup
+ip domain name yourdomain.com
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+cts logging verbose
+license udi pid C897VA-K9 sn FCZ202990B6
+!
+!
+username neteng privilege 15 secret Juniper1
+!
+!
+!
+!
+!
+controller VDSL 0
+ shutdown
+lldp run
+!
+ip ssh version 2
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address {{ loopback_ip }} 255.255.255.255
+!
+interface ATM0
+ no ip address
+ shutdown
+ no atm ilmi-keepalive
+!
+interface BRI0
+ no ip address
+ encapsulation hdlc
+ shutdown
+ isdn termination multidrop
+!
+interface Ethernet0
+ no ip address
+ shutdown
+!
+interface GigabitEthernet0
+ description "Management Network"
+ switchport access vlan 10
+ no ip address
+!
+interface GigabitEthernet1
+ description "{{ hostname }} gigabitEthernet1 <--> ge-0/0/1 LAB-SRX300"
+ switchport access vlan 20
+ no ip address
+!
+interface GigabitEthernet2
+ description "{{ hostname }} gigabitEthernet2 <--> ge-0/0/2 LAB-SRX300"
+ switchport access vlan 30
+ no ip address
+!
+interface GigabitEthernet3
+ no ip address
+!
+interface GigabitEthernet4
+ no ip address
+!
+interface GigabitEthernet5
+ no ip address
+!
+interface GigabitEthernet6
+ no ip address
+!
+interface GigabitEthernet7
+ no ip address
+!
+interface GigabitEthernet8
+ description "{{ hostname }} gigabitEthernet2 <--> gigabitEthernet1 LAB-RELAY"
+ ip address 10.0.0.3 255.255.255.254
+ duplex auto
+ speed auto
+ no shut
+!
+interface Vlan1
+ no ip address
+!
+interface Vlan10
+ ip address {{ management_ip }} 255.255.255.0
+!
+interface Vlan20
+ ip address 10.0.0.5 255.255.255.254
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 Juniper1
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+!
+interface Vlan30
+ ip address 10.0.0.7 255.255.255.254
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 1 md5 Juniper1
+ ip ospf network point-to-point
+ ip ospf 1 area 0
+!
+router ospf 1
+ router-id {{ loopback_ip }}
+ passive-interface Loopback0
+!
+ip forward-protocol nd
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+!
+control-plane
+!
+!
+mgcp behavior rsip-range tgcp-only
+mgcp behavior comedia-role none
+mgcp behavior comedia-check-media-src disable
+mgcp behavior comedia-sdp-force disable
+!
+mgcp profile default
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ login local
+ no modem enable
+line aux 0
+line vty 0 4
+ login local
+ transport input ssh telnet
+line vty 5 15
+ login local
+ transport input ssh telnet
+!
+scheduler allocate 20000 1000
+!
+!
+!
+event manager applet crypto-key
+ event timer cron cron-entry "@reboot"
+ action 1.0 cli command "enable"
+ action 1.1 cli command "config t"
+ action 1.2 cli command "file prompt quiet"
+ action 1.3 cli command "crypto key generate rsa modulus 2048"
+ action 1.4 cli command "no event manager applet crypto-key"
+ action 1.5 cli command "do wr mem"
+!
+end
